@@ -299,7 +299,7 @@ public class DetailActivity extends BaseActivity {
                     }
                     refreshList();
                     insertVod(firstsourceKey, vodInfo);
-                    //seriesAdapter.notifyDataSetChanged();
+                    updateSortButtonText();
                 }
             }
         });
@@ -710,7 +710,7 @@ public class DetailActivity extends BaseActivity {
             e.printStackTrace();
         }
         return arrayList;
-    }  
+    }
 
     private void setTextShow(TextView view, String tag, String info) {
         if (info == null || info.trim().isEmpty()) {
@@ -795,6 +795,8 @@ public class DetailActivity extends BaseActivity {
                             vodInfo.reverse();
                         }
 
+                        updateSortButtonText();
+
                         if (vodInfo.playFlag == null || !vodInfo.seriesMap.containsKey(vodInfo.playFlag))
                             vodInfo.playFlag = (String) vodInfo.seriesMap.keySet().toArray()[0];
 
@@ -833,6 +835,12 @@ public class DetailActivity extends BaseActivity {
                 }
             }
         });
+    }
+
+    private void updateSortButtonText() {
+        if (vodInfo != null && vodInfo.seriesMap != null && vodInfo.seriesMap.size() > 0) {
+            tvSort.setText(vodInfo.reverseSort ? R.string.det_sort_normal : R.string.det_sort);
+        }
     }
 
     private String getHtml(String label, String content) {
@@ -1247,7 +1255,8 @@ public class DetailActivity extends BaseActivity {
                 seriesFlagFocus.requestFocus();
                 return;
             }
-        } else if (showPreview) {
+        } else if (showPreview && playFragment != null) {
+            playFragment.setPlayTitle(false);
             playFragment.mVideoView.release();
         }
         super.onBackPressed();

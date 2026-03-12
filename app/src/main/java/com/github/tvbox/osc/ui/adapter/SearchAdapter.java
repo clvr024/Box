@@ -13,7 +13,7 @@ import com.github.tvbox.osc.util.ImgUtil;
 import com.orhanobut.hawk.Hawk;
 
 import java.util.ArrayList;
-
+import me.jessyan.autosize.utils.AutoSizeUtils;
 public class SearchAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHolder> {
     public SearchAdapter() {
         super(Hawk.get(HawkConfig.SEARCH_VIEW, 0) == 0 ? R.layout.item_search_lite : R.layout.item_search, new ArrayList<>());

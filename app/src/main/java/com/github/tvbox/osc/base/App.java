@@ -1,7 +1,10 @@
 package com.github.tvbox.osc.base;
 
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 
+import androidx.core.os.HandlerCompat;
 import androidx.multidex.MultiDexApplication;
 
 import com.github.catvod.crawler.JarLoader;
@@ -24,8 +27,11 @@ import com.kingja.loadsir.core.LoadSir;
 import com.orhanobut.hawk.Hawk;
 import com.p2p.P2PClass;
 import com.whl.quickjs.android.QuickJSLoader;
+import com.yanzhenjie.andserver.AndServer;
+import com.yanzhenjie.andserver.Server;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import io.github.inflationx.calligraphy3.CalligraphyConfig;
 import io.github.inflationx.calligraphy3.CalligraphyInterceptor;
@@ -44,12 +50,17 @@ public class App extends MultiDexApplication {
     public static String burl;
     private static String dashData;
     public static ViewPump viewPump = null;
+    private static Server server = null;
+    private final Handler handler;
 
+    public App() {
+        instance = this;
+        handler = HandlerCompat.createAsync(Looper.getMainLooper());
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        instance = this;
         SubtitleHelper.initSubtitleColor(this);
         initParams();
         // takagen99 : Initialize Locale
@@ -72,6 +83,13 @@ public class App extends MultiDexApplication {
                 .setSupportDP(false)
                 .setSupportSP(false)
                 .setSupportSubunits(Subunits.MM);
+        // 修复 Android 14+：冷启动时 ScreenUtils 可能获取到竖屏宽度，导致 xdpi 计算错误、UI 变小
+        int screenWidth = AutoSizeConfig.getInstance().getScreenWidth();
+        int screenHeight = AutoSizeConfig.getInstance().getScreenHeight();
+        if (screenWidth < screenHeight) {
+            AutoSizeConfig.getInstance().setScreenWidth(screenHeight);
+            AutoSizeConfig.getInstance().setScreenHeight(screenWidth);
+        }
         PlayerHelper.init();
 
         // Delete Cache
@@ -159,7 +177,7 @@ public class App extends MultiDexApplication {
     @Override
     public void onTerminate() {
         super.onTerminate();
-        JsLoader.load();
+        JsLoader.destroy();
     }
 
     public void setDashData(String data) {
@@ -168,5 +186,39 @@ public class App extends MultiDexApplication {
 
     public String getDashData() {
         return dashData;
+    }
+
+    public static void startWebserver() {
+        if (server != null) return;
+        server = AndServer
+                .webServer(instance)
+                .port(12345)
+                .timeout(60, TimeUnit.SECONDS)
+                .listener(new Server.ServerListener() {
+                    @Override
+                    public void onStarted() {
+
+                    }
+
+                    @Override
+                    public void onStopped() {
+
+                    }
+
+                    @Override
+                    public void onException(Exception e) {
+
+                    }
+                }).build();
+        server.startup();
+    }
+
+    public static void post(Runnable runnable) {
+        getInstance().handler.post(runnable);
+    }
+
+    public static void post(Runnable runnable, long delayMillis) {
+        getInstance().handler.removeCallbacks(runnable);
+        if (delayMillis >= 0) getInstance().handler.postDelayed(runnable, delayMillis);
     }
 }
